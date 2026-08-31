@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Universal Form Scanner — Test & Showcase</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f0f2f5;
+            color: #1c1e21;
+            margin: 0;
+            padding: 24px;
+            display: flex;
+            gap: 24px;
+        }
+        .form-column {
+            flex: 1.2;
+            max-width: 700px;
+        }
+        .inspector-column {
+            flex: 1;
+            position: sticky;
+            top: 24px;
+            height: calc(100vh - 48px);
+            display: flex;
+            flex-direction: column;
+        }
+        .card {
+            background: #ffffff;
+            border-radius: 10px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border: 1px solid #e4e6eb;
+        }
+        h2 {
+            margin-top: 0;
+            color: #1877f2;
+            font-size: 20px;
+            border-bottom: 2px solid #f0f2f5;
+            padding-bottom: 10px;
+        }
+        h3 {
+            margin: 16px 0 8px 0;
+            font-size: 16px;
+            color: #333;
+        }
+        .form-group {
+            margin-bottom: 18px;
+        }
+        .form-row {
+            display: flex;
+            gap: 16px;
+        }
+        .form-row .form-group {
+            flex: 1;
+        }
+        label {
+            display: block;
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 6px;
+            color: #444;
+        }
+        .required::after {
+            content: " *";
+            color: #e41e3f;
+        }
+        input[type="text"],
+        input[type="email"],
+        input[type="tel"],
+        input[type="number"],
+        input[type="date"],
+        input[type="time"],
+        input[type="password"],
+        input[type="url"],
+        input[type="search"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ccd0d5;
+            border-radius: 6px;
+            font-size: 14px;
+            background-color: #fff;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        input:focus, select:focus, textarea:focus {
+            border-color: #1877f2;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(24, 119, 242, 0.2);
+        }
+        .radio-group, .checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-top: 6px;
+        }
+        .radio-item, .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: normal;
+            cursor: pointer;
+        }
+        .radio-item input, .checkbox-item input {
+            cursor: pointer;
+            margin: 0;
+        }
+        fieldset {
+            border: 1px solid #ccd0d5;
+            border-radius: 6px;
+            padding: 12px 16px 16px 16px;
+            margin: 0 0 18px 0;
+        }
+        legend {
+            font-weight: 600;
+            font-size: 14px;
+            padding: 0 6px;
+            color: #444;
+        }
+        .btn {
+            padding: 10px 18px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: background-color 0.2s;
+        }
+        .btn-primary {
+            background-color: #1877f2;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #166fe5;
+        }
+        .btn-secondary {
+            background-color: #e4e6eb;
+            color: #050505;
+        }
+        .btn-secondary:hover {
+            background-color: #d8dadf;
+        }
+        .btn-danger {
+            background-color: #f02849;
+            color: white;
+        }
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 16px;
+        }
+        .json-viewer {
+            flex: 1;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            font-family: "Cascadia Code", "Fira Code", Consolas, Courier, monospace;
+            font-size: 12px;
+            line-height: 1.5;
+            padding: 16px;
+            border-radius: 8px;
+            overflow: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+            border: 1px solid #333;
+        }
+        .inspector-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .inspector-badge {
+            background: #e7f3ff;
+            color: #1877f2;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .dynamic-banner {
+            background: #fff8e1;
+            border-left: 4px solid #ffb300;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 13px;
+            margin-bottom: 16px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="form-column">
+        <!-- FORM 1: Job Application Form (Diverse Field Names) -->
+        <div class="card">
+            <h2>Form 1: Candidate Application (ID: jobAppForm)</h2>
+            <form id="jobAppForm" action="/submit-job" method="POST">
+                
+                <div class="form-row">
+                    <!-- Target 1: fname with explicit label for -->
+                    <div class="form-group">
+                        <label for="fname" class="required">First Name:</label>
+                        <input type="text" id="fname" name="candidate_first_name" placeholder="e.g. Deepanshu" required>
+                    </div>
+                    <!-- Target 2: given_name / lname -->
+                    <div class="form-group">
+                        <label for="lname" class="required">Last Name:</label>
+                        <input type="text" id="lname" name="surname" placeholder="e.g. Sharma" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <!-- Target 3: candidateEmail with wrapping label -->
+                    <div class="form-group">
+                        <label>
+                            Email Address: *
+                            <input type="email" id="candidateEmail" name="applicant_email" placeholder="name@domain.com" required>
+                        </label>
+                    </div>
+                    <!-- Target 4: phone_number with aria-label -->
+                    <div class="form-group">
+                        <label for="mobile_no">Phone / Mobile:</label>
+                        <input type="tel" id="mobile_no" name="contact_number" aria-label="Mobile Contact Number" placeholder="+91 9876543210">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <!-- Target 5: date of birth -->
+                    <div class="form-group">
+                        <label for="dob">Date of Birth:</label>
+                        <input type="date" id="dob" name="birth_date">
+                    </div>
+                    <!-- Target 6: years of experience (number) -->
+                    <div class="form-group">
+                        <label for="work_exp">Experience (Years):</label>
+                        <input type="number" id="work_exp" name="experience_years" min="0" max="50" step="0.5" value="3">
+                    </div>
+                </div>
+
+                <!-- Target 7: Single Select (Country) with dynamic trigger -->
+                <div class="form-group">
+                    <label for="country_select" class="required">Country:</label>
+                    <select id="country_select" name="country" required onchange="handleCountryChange(this.value)">
+                        <option value="">-- Select Country --</option>
+                        <option value="IN" selected>India</option>
+                        <option value="US">United States</option>
+                        <option value="UK">United Kingdom</option>
+                        <option value="DE">Germany</option>
+                        <option value="OTHER">Other (Specify below)</option>
+                    </select>
+                </div>
+
+                <!-- Dynamic Container: Appears when Country = OTHER -->
+                <div id="dynamicOtherCountryGroup" class="form-group" style="display: none;">
+                    <label for="other_country_name">Please Specify Your Country:</label>
+                    <input type="text" id="other_country_name" name="custom_country" placeholder="Enter country name">
+                </div>
+
+                <!-- Target 8: Multi-Select (Skills / Preferred Roles) -->
+                <div class="form-group">
+                    <label for="roles_select">Preferred Job Roles (Hold Ctrl / Cmd to select multiple):</label>
+                    <select id="roles_select" name="preferred_roles" multiple size="3">
+                        <option value="frontend" selected>Frontend Engineer</option>
+                        <option value="backend" selected>Backend Engineer</option>
+                        <option value="ai_ml">AI / ML Specialist</option>
+                        <option value="fullstack">Full Stack Developer</option>
+                    </select>
+                </div>
+
+                <!-- Target 9: Radio Group (Gender) -->
+                <fieldset>
+                    <legend>Gender Identity</legend>
+                    <div class="radio-group">
+                        <label class="radio-item">
+                            <input type="radio" name="gender" value="male" id="gender_m" checked> Male
+                        </label>
+                        <label class="radio-item">
+                            <input type="radio" name="gender" value="female" id="gender_f"> Female
+                        </label>
+                        <label class="radio-item">
+                            <input type="radio" name="gender" value="non_binary" id="gender_nb"> Non-Binary
+                        </label>
+                        <label class="radio-item">
+                            <input type="radio" name="gender" value="prefer_not_to_say" id="gender_pns"> Prefer not to say
+                        </label>
+                    </div>
+                </fieldset>
+
+                <!-- Target 10: Checkbox Group (Programming Languages) -->
+                <fieldset>
+                    <legend>Proficient Technologies</legend>
+                    <div class="checkbox-group">
+                        <label class="checkbox-item">
+                            <input type="checkbox" name="skills" value="python" id="skill_py" checked> Python
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" name="skills" value="javascript" id="skill_js" checked> JavaScript / TypeScript
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" name="skills" value="cpp" id="skill_cpp"> C++
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" name="skills" value="rust" id="skill_rust"> Rust
+                        </label>
+                    </div>
+                </fieldset>
+
+                <!-- Target 11: Textarea (Cover Letter / Bio) -->
+                <div class="form-group">
+                    <label for="cover_letter">Cover Letter / Professional Bio:</label>
+                    <textarea id="cover_letter" name="bio" rows="3" placeholder="Briefly describe your experience..."></textarea>
+                </div>
+
+                <!-- Target 12: Single Standalone Checkbox (Terms) -->
+                <div class="form-group">
+                    <label class="checkbox-item">
+                        <input type="checkbox" id="terms_agree" name="agree_terms" required>
+                        I certify that all provided details are accurate and agree to the privacy terms.
+                    </label>
+                </div>
+
+                <!-- Dynamic Fields Container (Added via button) -->
+                <div id="dynamicFieldsContainer"></div>
+
+                <!-- Action Buttons -->
+                <div class="btn-group">
+                    <button type="submit" id="submitAppBtn" class="btn btn-primary">Submit Application</button>
+                    <button type="button" id="addDependentBtn" class="btn btn-secondary" onclick="addDynamicField()">+ Add Reference Field</button>
+                    <button type="reset" id="resetBtn" class="btn btn-secondary">Reset Form</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- FORM 2: Quick Feedback Form (Multiple forms test) -->
+        <div class="card">
+            <h2>Form 2: Quick Feedback (ID: feedbackForm)</h2>
+            <form id="feedbackForm">
+                <div class="form-group">
+                    <label for="feedback_rating">Satisfaction Rating (1 to 10):</label>
+                    <input type="number" id="feedback_rating" name="rating" min="1" max="10" value="9">
+                </div>
+                <div class="form-group">
+                    <label for="feedback_comments">Comments:</label>
+                    <input type="text" id="feedback_comments" name="comments" placeholder="Your thoughts...">
+                </div>
+                <button type="button" id="sendFeedbackBtn" class="btn btn-primary">Send Feedback</button>
+            </form>
+        </div>
+
+        <!-- STANDALONE FIELDS (Outside of any <form> tag) -->
+        <div class="card">
+            <h2>Standalone Interactive Controls (No &lt;form&gt; tag)</h2>
+            <div class="dynamic-banner">
+                Modern SPAs (React/Vue/Angular) often render inputs outside traditional &lt;form&gt; elements.
+            </div>
+            <div class="form-group">
+                <label for="quick_search">Universal Search Query:</label>
+                <input type="search" id="quick_search" name="search_term" placeholder="Search forms, docs...">
+            </div>
+            <div class="form-group">
+                <label for="newsletter_sub">Subscribe to Tech Updates:</label>
+                <input type="email" id="newsletter_sub" name="newsletter_email" placeholder="newsletter@example.com">
+            </div>
+            <button type="button" id="subscribeBtn" class="btn btn-secondary">Subscribe</button>
+        </div>
+    </div>
+
+    <!-- LIVE FORM INSPECTOR PANEL -->
+    <div class="inspector-column">
+        <div class="card" style="height: 100%; display: flex; flex-direction: column; margin-bottom: 0;">
+            <div class="inspector-header">
+                <div>
+                    <h2 style="margin: 0; border: none; padding: 0;">Live Form Snapshot</h2>
+                    <span id="scanStatus" class="inspector-badge">Auto-Scan Active (MutationObserver)</span>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px;" onclick="manualRescan()">Rescan Now</button>
+                    <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px;" onclick="copySnapshot()">Copy JSON</button>
+                </div>
+            </div>
+            <div id="statsBar" style="font-size: 13px; color: #65676b; margin-bottom: 10px;">
+                Forms: 0 | Fields: 0 | Actions: 0
+            </div>
+            <pre id="snapshotDisplay" class="json-viewer">// Scanning DOM...</pre>
+        </div>
+    </div>
+
+    <!-- LOAD SPEECH CLEANER, SEMANTIC MAPPER, VALIDATOR, ACTION PLANNER & FORM SCANNER -->
+    <script src="form/speech-cleaner.js"></script>
+    <script src="form/semantic-mapper.js"></script>
+    <script src="form/scanner.js"></script>
+    <script src="form/validator.js"></script>
+    <script src="form/action-planner.js"></script>
+
+    <script>
+        let dynamicCount = 0;
+
+        function updateInspector(snapshot) {
+            const display = document.getElementById('snapshotDisplay');
+            const stats = document.getElementById('statsBar');
+            display.textContent = JSON.stringify(snapshot, null, 2);
+            stats.textContent = `Forms: ${snapshot.summary.total_forms} | Fields: ${snapshot.summary.total_fields} | Actions: ${snapshot.summary.total_actions} (Last updated: ${new Date().toLocaleTimeString()})`;
+        }
+
+        function manualRescan() {
+            const snapshot = FormScanner.scanPage();
+            updateInspector(snapshot);
+        }
+
+        function copySnapshot() {
+            const jsonText = document.getElementById('snapshotDisplay').textContent;
+            navigator.clipboard.writeText(jsonText).then(() => {
+                alert('Form Snapshot JSON copied to clipboard!');
+            });
+        }
+
+        function handleCountryChange(val) {
+            const dynamicGroup = document.getElementById('dynamicOtherCountryGroup');
+            if (val === 'OTHER') {
+                dynamicGroup.style.display = 'block';
+            } else {
+                dynamicGroup.style.display = 'none';
+            }
+        }
+
+        function addDynamicField() {
+            dynamicCount++;
+            const container = document.getElementById('dynamicFieldsContainer');
+            const newDiv = document.createElement('div');
+            newDiv.className = 'form-group';
+            newDiv.id = `ref_group_${dynamicCount}`;
+            newDiv.innerHTML = `
+                <label for="reference_name_${dynamicCount}">Reference Person #${dynamicCount}:</label>
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" id="reference_name_${dynamicCount}" name="reference_${dynamicCount}" placeholder="Full Name & Contact">
+                    <button type="button" class="btn btn-danger" onclick="removeDynamicField('${newDiv.id}')">Remove</button>
+                </div>
+            `;
+            container.appendChild(newDiv);
+        }
+
+        function removeDynamicField(id) {
+            const el = document.getElementById(id);
+            if (el) el.remove();
+        }
+
+        // Initialize Dynamic Scanner
+        window.addEventListener('DOMContentLoaded', () => {
+            FormScanner.startAutoScan({
+                debounceMs: 150,
+                debug: true,
+                onChange: (snapshot) => {
+                    updateInspector(snapshot);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

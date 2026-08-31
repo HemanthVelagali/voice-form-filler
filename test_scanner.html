@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Form Scanner Automated Unit Tests (Tests 1-10)</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f8f9fa;
+            color: #212529;
+            padding: 24px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #0d6efd;
+            border-bottom: 2px solid #dee2e6;
+            padding-bottom: 8px;
+        }
+        .test-card {
+            background: white;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+            border-left: 5px solid #ffc107;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+        .test-card.passed {
+            border-left-color: #198754;
+        }
+        .test-card.failed {
+            border-left-color: #dc3545;
+        }
+        .test-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+        }
+        .badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .badge.pass { background: #d1e7dd; color: #0f5132; }
+        .badge.fail { background: #f8d7da; color: #842029; }
+        .badge.pending { background: #fff3cd; color: #664d03; }
+        .test-details {
+            font-size: 13px;
+            color: #6c757d;
+            margin-top: 6px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        #summaryCard {
+            background: #e7f1ff;
+            border: 1px solid #b6d4fe;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 20px;
+            font-size: 16px;
+            font-weight: 600;
+        }
+        #sandbox {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>Form Scanner Verification Suite (Phase 1)</h1>
+    <div id="summaryCard">Running automated tests...</div>
+    <div id="testResults"></div>
+
+    <!-- Hidden DOM Sandbox for Test Cases -->
+    <div id="sandbox"></div>
+
+    <script src="form/speech-cleaner.js"></script>
+    <script src="form/semantic-mapper.js"></script>
+    <script src="form/scanner.js"></script>
+    <script>
+        const resultsContainer = document.getElementById('testResults');
+        const summaryCard = document.getElementById('summaryCard');
+        const sandbox = document.getElementById('sandbox');
+
+        const tests = [
+            {
+                id: 'Test 1',
+                title: 'Detects arbitrary/varied field names without hardcoding',
+                fn: async () => {
+                    sandbox.innerHTML = `
+                        <form id="t1_form">
+                            <input id="f1" name="fname" type="text" placeholder="First Name">
+                            <input id="f2" name="given_name" type="text" placeholder="Given Name">
+                            <input id="f3" name="candidate_first_name" type="text" placeholder="Candidate First Name">
+                            <input id="f4" name="applicantFirstName" type="text" placeholder="Applicant First Name">
+                        </form>
+                    `;
+                    const snapshot = FormScanner.scanPage(sandbox);
+                    const form = snapshot.forms[0];
+                    if (form.fields.length !== 4) throw new Error(`Expected 4 fields, got ${form.fields.length}`);
+                    const names = form.fields.map(f => f.name);
+                    const expected = ['fname', 'given_name', 'candidate_first_name', 'applicantFirstName'];
+                    for (const exp of expected) {
+                        if (!names.includes(exp)) throw new Error(`Missing expected field name: ${exp}`);
+                    }
+                    return 'All varied field names detected accurately.';
+                }
+            },
+            {
+                id: 'Test 2',
+                title: 'Intelligent label detection across all prioritized fallback levels',
+                fn: async () => {
+                    sandbox.innerHTML = `
+                        <form id="t2_form">
+                            <!-- 1. Explicit label for -->
+                            <label for="l1">Explicit Label</label>
+                            <input id="l1" name="inp1" type="text">
+
+                            <!-- 2. Wrapping label -->
+                            <label>Wrapping Label Text <input id="l2" name="inp2" type="text"></label>
+
+                            <!-- 3. aria-label -->
+                            <input id="l3" name="inp3" type="text" aria-label="Aria Labelled Text">
+
+                            <!-- 4. aria-labelledby -->
+                            <span id="labelRef">Aria By Reference</span>
+                            <input id="l4" name="inp4" type="text" aria-labelledby="labelRef">
+
+                            <!-- 5. Placeholder fallback -->
+                            <input id="l5" name="inp5" type="text" placeholder="Placeholder As Label">
+                        </form>
+                    `;
+                    const snapshot = FormScanner.scanPage(sandbox);
+                    const form = snapshot.forms[0];
+                    const labels = form.fields.map(f => ({ name: f.name, label: f.label, source: f.label_source }));
+                    
+                    const f1 = form.fields.find(f => f.name === 'inp1');
+                    if (f1.label !== 'Explicit Label') throw new Error(`inp1 expected 'Explicit Label', got '${f1.label}'`);
+
+                    const f2 = form.fields.find(f => f.name === 'inp2');
+                    if (f2.label !== 'Wrapping Label Text') throw new Error(`inp2 expected 'Wrapping Label Text', got '${f2.label}'`);
+
+                    const f3 = form.fields.find(f => f.name === 'inp3');
+                    if (f3.label !== 'Aria Labelled Text') throw new Error(`inp3 expected 'Aria Labelled Text', got '${f3.label}'`);
+
+                    const f4 = form.fields.find(f => f.name === 'inp4');
+                    if (f4.label !== 'Aria By Reference') throw new Error(`inp4 expected 'Aria By Reference', got '${f4.label}'`);
+
+                    const f5 = form.fields.find(f => f.name === 'inp5');
+                    if (f5.label !== 'Placeholder As Label') throw new Error(`inp5 expected 'Placeholder As Label', got '${f5.label}'`);
+
+                    return 'All 5 label detection tiers successfully verified.';
+                }
+            },
+            {
+                id: 'Test 3',
+                title: 'Select field extraction with options, multi-select, and states',
+                fn: async () => {
+                    sandbox.innerHTML = `
+                        <form id="t3_form">
+                            <label for="country">Country</label>
+                            <select id="country" name="country">
+                                <option value="IN" selected>India</option>
+                                <option value="US">United States</option>
+                                <option value="UK" disabled>United Kingdom</option>
+                            </select>
+
+                            <label for="skills">Skills</label>
+                            <select id="skills" name="skills" multiple>
+                                <option value="py" selected>Python</option>
+                                <option value="js" selected>JavaScript</option>
+                                <option value="rs">Rust</option>
+                            </select>
+                        </form>
+                    `;
+                    const snapshot = FormScanner.scanPage(sandbox);
+                    const form = snapshot.forms[0];
+                    const countryField = form.fields.find(f => f.name === 'country');
+                    if (!countryField) throw new Error('Country select not found');
+                    if (countryField.options.length !== 3) throw new Error(`Expected 3 options, got ${countryField.options.length}`);
+                    if (countryField.options[0].text !== 'India' || !countryField.options[0].selected) throw new Error('Option 0 mismatch');
+                    if (!countryField.options[2].disabled) throw new Error('Option 2 should be disabled');
+
+                    const skillsField = form.fields.find(f => f.name === 'skills');
+                    if (!skillsField.multiple) throw new Error('Skills should have multiple: true');
+                    if (skillsField.value.length !== 2) throw new Error('Skills value should have 2 selected items');
+
+                    return 'Single and multi-select options, selection state, and disabled options verified.';
+                }
+            },
+            {
+                id: 'Test 4',
+                title: 'Radio button groups grouped by name into single logical field',
+                fn: async () => {
+                    sandbox.innerHTML = `
+                        <form id="t4_form">
+                            <fieldset>
+                                <legend>Gender</legend>
+                                <label><input type="radio" name="gender" value="male"> Male</label>
+                                <label><input type="radio" name="gender" value="female" checked> Female</label>
+                                <label><input type="radio" name="gender" value="other"> Other</label>
+                            </fieldset>
+                        </form>
+                    `;
+                    const snapshot = FormScanner.scanPage(sandbox);
+                    const form = snapshot.forms[0];
+                    if (form.fields.length !== 1) throw new Error(`Expected 1 grouped radio field, got ${form.fields.length}`);
+                    const radio = form.fields[0];
+                    if (radio.type !== 'radio') throw new Error(`Expected type 'radio', got ${radio.type}`);
+                    if (radio.label !== 'Gender') throw new Error(`Expected label 'Gender', got '${radio.label}'`);
+                    if (radio.value !== 'female') throw new Error(`Expected value 'female', got '${radio.value}'`);
+                    if (radio.options.length !== 3) throw new Error(`Expected 3 radio options, got ${radio.options.length}`);
+                    return 'Radio inputs successfully grouped into single logical field with options.';
+                }
+            },
+            {
+                id: 'Test 5',
+                title: 'Checkbox groups vs standalone single checkboxes',
+                fn: async () => {
+                    sandbox.innerHTML = `
+                        <form id="t5_form">
+                            <fieldset>
+                                <legend>Programming Languages</legend>
+                                <label><input type="checkbox" name="langs" value="py" checked> Python</label>
+                                <label><input type="checkbox" name="langs" value="js" checked> JavaScript</label>
+                                <label><input type="checkbox" name="langs" value="go"> Go</label>
+                            </fieldset>
+
+                            <label><input type="checkbox" id="terms" name="agree" value="yes"> I agree to terms</label>
+                        </form>
+                    `;
+                    const snapshot = FormScanner.scanPage(sandbox);
+                    const form = snapshot.forms[0];
+                    if (form.fields.length !== 2) throw new Error(`Expected 2 fields (1 group, 1 single), got ${form.fields.length}`);
+                    
+                    const group = form.fields.find(f => f.name === 'langs');
+                    if (group.type !== 'checkbox_group') throw new Error(`Expected 'checkbox_group', got ${group.type}`);
+                    if (group.options.length !== 3) throw new Error(`Expected 3 options in checkbox group`);
+                    if (group.value.length !== 2) throw new Error(`Expected 2 checked items in group value`);
+
+                    const single = form.fields.find(f => f.name === 'agree');
+                    if (single.type !== 'checkbox') throw new Error(`Expected 'checkbox', got ${single.type}`);
+                    if (single.checked !== false) throw new Error(`Terms checkbox should not be checked`);
+
+                    return 'Checkbox group and standalone checkbox correctly distinguished.';
+                }
+            },
+            {
+                id: 'Test 6',
+                title: 'Required, disabled, readonly, and validation constraints captured',
+                fn: async () => {
+                    sandbox.innerHTML = `
+                        <form id="t6_form">
+                            <input id="req" name="req_field" type="text" required>
+                            <input id="dis" name="dis_field" type="text" disabled>
+                            <input id="ro" name="ro_field" type="text" readonly value="Fixed">
+                            <input id="val" name="val_field" type="number" min="10" max="100" step="5">
+                        </form>
+                    `;
+                    const snapshot = FormScanner.scanPage(sandbox);
+                    const form = snapshot.forms[0];
+                    
+                    const req = form.fields.find(f => f.name === 'req_field');
+                    if (!req.required) throw new Error('req_field should be required');
+
+                    const dis = form.fields.find(f => f.name === 'dis_field');
+                    if (!dis.disabled) throw new Error('dis_field should be disabled');
+
+                    const ro = form.fields.find(f => f.name === 'ro_field');
+                    if (!ro.readonly) throw new Error('ro_field should be readonly');
+
+                    const val = form.fields.find(f => f.name === 'val_field');
+                    if (val.validation.min !== '10' || val.validation.max !== '100' || val.validation.step !== '5') {
+                        throw new Error(`Validation constraint mismatch: ${JSON.stringify(val.validation)}`);
+                    }
+
+                    return 'Required, disabled, readonly, and min/max/step validation constraints verified.';
+                }
+            },
+            {
+                id: 'Test 7',
+                title: 'Action buttons and submission elements detected',
+                fn: async () => {
+                    sandbox.innerHTML = `
+                        <form id="t7_form">
+                            <button type="submit" id="btn1">Submit Application</button>
+                            <button type="button" id="btn2">Next Step</button>
+                            <input type="reset" id="btn3" value="Clear All">
+                        </form>
+                    `;
+                    const snapshot = FormScanner.scanPage(sandbox);
+                    const form = snapshot.forms[0];
+                    if (form.actions.length !== 3) throw new Error(`Expected 3 actions, got ${form.actions.length}`);
+                    
+                    const b1 = form.actions.find(a => a.id === 'btn1');
+                    if (b1.type !== 'submit' || b1.text !== 'Submit Application') throw new Error('Action 1 mismatch');
+
+                    const b2 = form.actions.find(a => a.id === 'btn2');
+                    if (b2.type !== 'button' || b2.text !== 'Next Step') throw new Error('Action 2 mismatch');
+
+                    const b3 = form.actions.find(a => a.id === 'btn3');
+                    if (b3.type !== 'reset' || b3.text !== 'Clear All') throw new Error('Action 3 mismatch');
+
+                    return 'Action buttons with types submit, button, and reset detected.';
+                }
+            },
+            {
+                id: 'Test 8',
+                title: 'Dynamic DOM modifications detected via MutationObserver',
+                fn: async () => {
+                    sandbox.innerHTML = `<form id="t8_form"><input id="dyn_1" name="field1" type="text"></form>`;
+                    
+                    let updateReceived = false;
+                    let lastSnapshot = null;
+
+                    const autoScan = FormScanner.startAutoScan({
+                        root: sandbox,
+                        debounceMs: 50,
+                        onChange: (snap) => {
+                            updateReceived = true;
+                            lastSnapshot = snap;
+                        }
+                    });
+
+                    // Mutate DOM by adding a new dynamic input
+                    const formEl = sandbox.querySelector('form');
+                    const newDiv = document.createElement('div');
+                    newDiv.innerHTML = '<label for="dyn_2">Dynamic Field</label><input id="dyn_2" name="dynamic_field" type="text">';
+                    formEl.appendChild(newDiv);
+
+                    // Wait for debounce
+                    await new Promise(r => setTimeout(r, 120));
+                    FormScanner.stopAutoScan();
+
+                    if (!lastSnapshot) throw new Error('No snapshot received from observer');
+                    const form = lastSnapshot.forms[0];
+                    if (form.fields.length !== 2) throw new Error(`Expected 2 fields after DOM mutation, got ${form.fields.length}`);
+                    const dynField = form.fields.find(f => f.name === 'dynamic_field');
+                    if (!dynField || dynField.label !== 'Dynamic Field') throw new Error('Dynamic field not correctly detected in snapshot');
+
+                    return 'MutationObserver successfully detected dynamically added DOM fields.';
+                }
+            },
+            {
+                id: 'Test 9',
+                title: 'Multiple forms and standalone fields handled cleanly',
+                fn: async () => {
+                    sandbox.innerHTML = `
+                        <form id="first_form">
+                            <input id="f_a" name="form_a_input" type="text">
+                        </form>
+                        <form id="second_form">
+                            <input id="f_b" name="form_b_input" type="text">
+                        </form>
+                        <div id="standalone_box">
+                            <input id="f_c" name="standalone_input" type="text">
+                        </div>
+                    `;
+                    const snapshot = FormScanner.scanPage(sandbox);
+                    if (snapshot.forms.length !== 3) throw new Error(`Expected 3 forms (2 explicit + 1 standalone), got ${snapshot.forms.length}`);
+                    
+                    const form1 = snapshot.forms.find(f => f.form_id === 'first_form');
+                    const form2 = snapshot.forms.find(f => f.form_id === 'second_form');
+                    const standalone = snapshot.forms.find(f => f.is_virtual === true);
+
+                    if (!form1 || form1.fields.length !== 1) throw new Error('Form 1 mismatch');
+                    if (!form2 || form2.fields.length !== 1) throw new Error('Form 2 mismatch');
+                    if (!standalone || standalone.fields.length !== 1) throw new Error('Standalone form mismatch');
+
+                    return 'Multiple <form> elements and standalone virtual container correctly separated.';
+                }
+            },
+            {
+                id: 'Test 10',
+                title: 'Global FormFiller interface and non-breaking compatibility',
+                fn: async () => {
+                    if (typeof window.FormFiller !== 'object') throw new Error('window.FormFiller is not defined');
+                    if (typeof window.FormFiller.scanPage !== 'function') throw new Error('window.FormFiller.scanPage is not a function');
+                    if (typeof window.FormFiller.getFormSnapshot !== 'function') throw new Error('window.FormFiller.getFormSnapshot is not a function');
+                    if (typeof window.FormScanner !== 'object') throw new Error('window.FormScanner is not defined');
+                    
+                    sandbox.innerHTML = `<input id="compat_test" name="test" value="123">`;
+                    const snap = window.FormFiller.scanPage(sandbox);
+                    if (!window.__FORM_SNAPSHOT__) throw new Error('window.__FORM_SNAPSHOT__ was not populated');
+                    if (snap.summary.total_fields !== 1) throw new Error('Snapshot did not scan field');
+
+                    return 'window.FormFiller, window.FormScanner, and window.__FORM_SNAPSHOT__ exposed cleanly.';
+                }
+            }
+        ];
+
+        async function runSuite() {
+            let passed = 0;
+            let failed = 0;
+
+            for (const t of tests) {
+                const card = document.createElement('div');
+                card.className = 'test-card';
+                card.innerHTML = `
+                    <div class="test-header">
+                        <span>${t.id}: ${t.title}</span>
+                        <span class="badge pending" id="badge_${t.id}">RUNNING</span>
+                    </div>
+                    <div class="test-details" id="details_${t.id}">Executing...</div>
+                `;
+                resultsContainer.appendChild(card);
+
+                try {
+                    const message = await t.fn();
+                    card.classList.remove('failed');
+                    card.classList.add('passed');
+                    document.getElementById(`badge_${t.id}`).className = 'badge pass';
+                    document.getElementById(`badge_${t.id}`).textContent = 'PASSED';
+                    document.getElementById(`details_${t.id}`).textContent = `✔ ${message}`;
+                    passed++;
+                } catch (err) {
+                    card.classList.add('failed');
+                    document.getElementById(`badge_${t.id}`).className = 'badge fail';
+                    document.getElementById(`badge_${t.id}`).textContent = 'FAILED';
+                    document.getElementById(`details_${t.id}`).textContent = `✖ Error: ${err.message}`;
+                    failed++;
+                }
+            }
+
+            summaryCard.textContent = `Test Suite Execution Completed: ${passed}/${tests.length} Passed, ${failed} Failed.`;
+            summaryCard.style.background = failed === 0 ? '#d1e7dd' : '#f8d7da';
+            summaryCard.style.color = failed === 0 ? '#0f5132' : '#842029';
+            summaryCard.style.borderColor = failed === 0 ? '#badbcc' : '#f5c2c7';
+        }
+
+        window.addEventListener('DOMContentLoaded', runSuite);
+    </script>
+</body>
+</html>
