@@ -1,232 +1,234 @@
-We can use voice recognition to fill forms. 
+# Voice Form Filler
 
-https://github.com/user-attachments/assets/be8c74b8-681f-4242-96b2-65a0f696fd38
+We can use voice recognition to fill forms.
 
-
+[Demo Video](https://github.com/user-attachments/assets/be8c74b8-681f-4242-96b2-65a0f696fd38)
 
 ![Form](./images/form.png)
 
-# Installation 
-## Setting Up Your Environment
+## Features
 
-A simple guide to create an Anaconda environment and install required packages.
+- Voice-based form filling
+- Automatic form detection
+- Semantic field understanding
+- Natural voice commands
+- Local AI using Qwen 2.5 3B
+- Form validation
+- Voice navigation
+- Select, radio and checkbox support
+- Text-to-speech feedback
+- Local processing
 
-### Create and Set Up Environment
+## Requirements
 
-```bash
-# Create a new conda environment with Python 3.10
-conda create -n myenv python=3.10
+- Windows 10 or Windows 11
+- Python 3.12
+- Git
+- Ollama
+- FFmpeg
 
-# Activate the environment
-conda activate myenv
+## Installation
 
-# Install packages from requirements.txt
+### 1. Clone the repository
+
+```powershell
+git clone git@github.com:HemanthVelagali/voice-form-filler.git
+cd voice-form-filler
+```
+
+### 2. Create Python environment
+
+```powershell
+python -m venv venv
+.\venv\Scripts\Activate.ps1
+```
+
+Install dependencies:
+
+```powershell
 pip install -r requirements.txt
 ```
 
-### Basic Usage
+## 3. Download the ASR Model
 
-```bash
-# Activate environment when needed
-conda activate myenv
+Create the models directory:
 
-# Deactivate when finished
-conda deactivate
+```powershell
+New-Item -ItemType Directory -Force models
 ```
 
-# Downloading speech recognition models
+Download the following ASR model:
 
-```
-mkdir models
-cd models
-wget https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8.tar.bz2
-tar xvf sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8.tar.bz2
-rm sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8.tar.bz2
-
-wget https://dldata-public.s3.us-east-2.amazonaws.com/2086-149220-0033.wav
-mv 2086-149220-0033.wav file.wav
-cd ..
-```
-Finally execute the testing script as 
-
-```
-python ./test_model.py \
-  --encoder ./models/sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8/encoder.int8.onnx \
-  --decoder ./models/sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8/decoder.int8.onnx \
-  --joiner ./models/sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8/joiner.int8.onnx \
-  --tokens ./models/sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8/tokens.txt \
-  --wav models/file.wav
+```text
+sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8
 ```
 
-# Test the TTS model
+Place it inside:
 
-```
-cd models
-wget https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/kokoro-v1.0.onnx
-wget https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/voices-v1.0.bin
-cd ..
-```
-
-Now execute 
-python test_speech_model.py
-
-# Test the TTS server
-
-`python tts_server.py`
-
-and then click on `play_voice.html`
-
-# Setup ffmpeg
-
-    You can download an installer for your OS from the [ffmpeg Website](https://ffmpeg.org/download.html).  
-    
-    Or use a package manager:
-
-    - **On Ubuntu or Debian**:
-        ```bash
-        sudo apt update && sudo apt install ffmpeg
-        ```
-
-    - **On Arch Linux**:
-        ```bash
-        sudo pacman -S ffmpeg
-        ```
-
-    - **On MacOS using Homebrew** ([https://brew.sh/](https://brew.sh/)):
-        ```bash
-        brew install ffmpeg
-        ```
-
-    - **On Windows using Winget** [official documentation](https://learn.microsoft.com/en-us/windows/package-manager/winget/) :
-        ```bash
-        winget install Gyan.FFmpeg
-        ```
-        
-    - **On Windows using Chocolatey** ([https://chocolatey.org/](https://chocolatey.org/)):
-        ```bash
-        choco install ffmpeg
-        ```
-
-    - **On Windows using Scoop** ([https://scoop.sh/](https://scoop.sh/)):
-        ```bash
-        scoop install ffmpeg
-        ```    
-
-# Install Ollama 
-
-
-
-Please Ollama installed (ollama.ai).
-## Set Environment Variable
-Enable CORS by setting OLLAMA_ORIGINS to allow requests from http://localhost:8080 (web server).
-#### Windows (Command Prompt)
-```
-set OLLAMA_ORIGINS=http://localhost:8080
-ollama serve
+```text
+models\
+└── sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8\
+    ├── encoder.int8.onnx
+    ├── decoder.int8.onnx
+    ├── joiner.int8.onnx
+    └── tokens.txt
 ```
 
-#### Windows (PowerShell)
-```
-$env:OLLAMA_ORIGINS="http://localhost:8080"
-ollama serve
+## 4. Download Kokoro TTS Models
+
+Create the directory:
+
+```powershell
+New-Item -ItemType Directory -Force models\kokoro
 ```
 
-#### Linux/macOS
-```
-export OLLAMA_ORIGINS=http://localhost:8080
-ollama serve
+Place these files inside:
+
+```text
+models\kokoro\
+├── kokoro-v1.0.onnx
+└── voices-v1.0.bin
 ```
 
-## Configure Model
-Use the  granite3.1-dense:2b model for string correction.
+## 5. Install FFmpeg
 
-#### Install Model:
-```
-ollama pull  granite3.1-dense:2b
+```powershell
+winget install Gyan.FFmpeg
 ```
 
-#### Verify Model:
+Verify:
+
+```powershell
+ffmpeg -version
 ```
+
+## 6. Install Ollama
+
+Install Ollama for Windows.
+
+Check:
+
+```powershell
+ollama --version
+```
+
+Download the AI model:
+
+```powershell
+ollama pull qwen2.5:3b
+```
+
+Verify:
+
+```powershell
 ollama list
 ```
-Confirm  granite3.1-dense:2b is listed.
 
+You should see:
 
-#### Test API:
-
-Run the following curl command with proper JSON encoding:
-```
-  curl -X POST http://localhost:11434/api/generate -d "{\"model\":\"granite3.1-dense:2b\",\"prompt\":\"You are a string corrector. For the input string \\\"Dipanshu\\\", perform the action: \\\"Remove i and replace it with ee\\\". Return only the corrected string.\",\"stream\":false}"
+```text
+qwen2.5:3b
 ```
 
-#### Troubleshoot
+## Running the Application
 
-Port Conflict:
-Windows: netstat -aon | findstr :11434, then taskkill /PID <PID> /F.
-Linux: lsof -i :11434, then kill -9 <PID>.
+Open three PowerShell terminals.
 
-# Execution
+### Terminal 1 — Ollama
 
-
-First the recognition server
-On Windows
-```
-python .\asr_server.py --encoder .\models\sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8\encoder.int8.onnx --decoder .\models\sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8\decoder.int8.onnx  --joiner .\models\sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8\joiner.int8.onnx --tokens .\models\sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8\tokens.txt --port 8001
-
-```
-On linux
-
-```
-python ./asr_server.py \
-  --encoder ./models/sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8/encoder.int8.onnx \
-  --decoder ./models/sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8/decoder.int8.onnx \
-  --joiner ./models/sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8/joiner.int8.onnx \
-  --tokens ./models/sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8/tokens.txt \
-  --port 8001
-
-```
-
-
-Start the tts server (Text to Speech Server)
-
-`python tts_server.py`
-
-
-Now double click `voice-form.html`
-
-
-# Credits
-Thanks to repository which provided server implementation 
-
-https://github.com/KoljaB/RealtimeSTT 
-
-and 
-
-https://github.com/k2-fsa/sherpa-onnx/tree/master
-
-and 
-
-https://github.com/thewh1teagle/kokoro-onnx
-
-# Coming soon 
-1. Support for languages other than english 
-2. Voice output after filling the text field  -> Done
-3. Interaction with only voice such as hey there is an extra r in my name after e or the ee in my name instead of i in my name. -> Done
-4. Ability to execute this on tiny devices other than desktop. 
-5. Streaming instead of sending .wav files to server. -> Done 
-
-# Running
+```powershell
 $env:OLLAMA_ORIGINS="http://localhost:8080"
 ollama serve
+```
 
-python .\asr_server.py --encoder .\models\sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8\encoder.int8.onnx --decoder .\models\sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8\decoder.int8.onnx --joiner .\models\sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8\joiner.int8.onnx --tokens .\models\sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8\tokens.txt --port 8001
+### Terminal 2 — AI Server
 
+```powershell
+.\venv\Scripts\Activate.ps1
+python -m uvicorn ai_server:app --host 127.0.0.1 --port 8090
+```
 
-python tts_server.py
+### Terminal 3 — Main Application
 
+```powershell
+.\venv\Scripts\Activate.ps1
+python main.py
+```
 
-python -m http.server 8080
+The services use:
 
+```text
+ASR  → localhost:8001
+TTS  → localhost:8000
+AI   → localhost:8090
+WEB  → localhost:8080
+```
+
+## Open the Form
+
+Open:
+
+```text
 http://localhost:8080/voice-form.html
+```
 
+Allow microphone access and start speaking.
 
+## Example Commands
+
+```text
+My name is Hemanth.
+```
+
+```text
+My email is hemanth at gmail dot com.
+```
+
+```text
+My phone number is 8341404045.
+```
+
+```text
+Next field.
+```
+
+```text
+Previous field.
+```
+
+```text
+Go to the email field.
+```
+
+```text
+Submit the form.
+```
+
+## Project Structure
+
+```text
+voice-form-filler/
+│
+├── form/
+│   ├── action-planner.js
+│   ├── dom-executor.js
+│   ├── scanner.js
+│   ├── semantic-mapper.js
+│   ├── speech-cleaner.js
+│   └── validator.js
+│
+├── ai_engine.py
+├── ai_server.py
+├── asr_server.py
+├── tts_server.py
+├── main.py
+├── fill.js
+├── voice-form.html
+├── play_voice.html
+├── requirements.txt
+└── README.md
+```
+
+## Author
+
+Hemanth
